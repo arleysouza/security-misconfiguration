@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
+          cache-dependency-path: server/package-lock.json
 
       - name: 📦 Install dependencies
         run: |
