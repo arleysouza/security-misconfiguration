@@ -11,7 +11,7 @@ CREATE TABLE users (
 -- Função para tratar a duplicidade
 -- O USING ERRCODE = 'unique_violation' mantém o código de erro do PostgreSQL para integridade de chave única (23505), o que ajuda se o backend quiser tratar por código.
 CREATE OR REPLACE FUNCTION check_unique_username()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER AS $$ 
 BEGIN
     -- Verifica se já existe outro usuário com o mesmo username
     IF EXISTS (
