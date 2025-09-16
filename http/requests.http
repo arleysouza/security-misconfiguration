@@ -39,5 +39,5 @@ Content-Type: application/json
 
 {
   "oldPassword": "123456",
-  "newPassword": "123455"
+  "newPassword": "123456"
 }

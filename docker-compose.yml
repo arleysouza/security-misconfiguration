@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: _12_bdaula82@&09_hg$
       POSTGRES_DB: bdaula
     ports:
       - "5433:5432"
@@ -19,7 +19,7 @@ services:
     image: redis:8-alpine
     container_name: redis-app
     restart: always
-    command: redis-server --requirepass 123
+    command: redis-server --requirepass "s_tr_red82_Hg09"
     ports:
       - "6379:6379"
     volumes:

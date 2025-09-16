@@ -80,11 +80,15 @@ docker compose down -v
 2. Rode o Docker Bench Security:  
 
 ```bash
-docker run -it --net host --pid host --userns host \
+docker run -it --name docker-bench \
+  --net host \
+  --pid host \
+  --userns host \
   --cap-add audit_control \
   -v /var/lib:/var/lib:ro \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   docker/docker-bench-security
+
 ```
 
 3. Analise o relatório gerado.  
