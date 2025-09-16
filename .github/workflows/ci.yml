@@ -92,15 +92,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Usa ação oficial do Trivy para escanear a imagem
+      - name: 🐳 Build Docker image
+        run: docker build -t security-misconfig-app:latest -f server/Dockerfile ./server
+
       - name: 🔎 Run Trivy Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'Dockerfile'
+          image-ref: 'security-misconfig-app:latest'
           format: 'table'
-          exit-code: '1'         # Falha se encontrar vulnerabilidades críticas
-          ignore-unfixed: true   # Ignora CVEs ainda sem correção
-          vuln-type: 'os,library' # Analisa sistema e dependências
+          exit-code: '1' # Falhar se vulnerabilidades críticas forem encontradas
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+
 
   # 4️⃣ Etapa de segurança com Snyk
   snyk-scan:
