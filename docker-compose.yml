@@ -44,6 +44,28 @@ services:
     ports:
       - "3001:3000"
 
+# Serviço para testar como root
+  test-root:
+    image: node:22-alpine
+    container_name: test-root
+    command: sh -c "sleep infinity"
+    volumes:
+      - ./server:/usr/src/app
+    networks:
+      - minha-network
+    # root é o usuário padrão → sem USER definido
+
+  # Serviço para testar como node (não-root)
+  test-node:
+    image: node:22-alpine
+    container_name: test-node
+    user: "node"
+    command: sh -c "sleep infinity"
+    volumes:
+      - ./server:/usr/src/app
+    networks:
+      - minha-network
+
 volumes:
   db_postgres_data:
   redis_data:
