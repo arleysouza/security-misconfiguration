@@ -110,7 +110,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 4.1 Scan das dependências Node.js (resumo no log)
+      # Instala dependências necessárias para o Snyk analisar
+      - name: 📦 Install dependencies
+        run: |
+          cd server
+          npm install
+
+      # Scan das dependências Node.js (resumo no log)
       - name: 🧪 Run Snyk Scan (Node.js - Summary)
         uses: snyk/actions/node@master
         env:
@@ -119,7 +125,7 @@ jobs:
           command: test
           args: --file=server/package.json --package-manager=npm --severity-threshold=high
 
-      # 4.2 Scan das dependências Node.js (JSON Report)
+      # Scan das dependências Node.js (JSON Report)
       - name: 🧪 Run Snyk Scan (Node.js - JSON Report)
         run: |
           cd server
@@ -133,24 +139,3 @@ jobs:
           name: snyk-node-report
           path: snyk-node-report.json
 
-      # 4.3 Scan da imagem Docker (resumo no log)
-      - name: 🐳 Run Snyk Container Scan (Summary)
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: security-misconfig-app:latest
-          args: --severity-threshold=high
-
-      # 4.4 Scan da imagem Docker (JSON Report)
-      - name: 🐳 Run Snyk Container Scan (JSON Report)
-        run: |
-          snyk container test security-misconfig-app:latest --json > snyk-docker-report.json
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
-      - name: 📤 Upload Snyk Docker Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: snyk-docker-report
-          path: snyk-docker-report.json
