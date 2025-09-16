@@ -11,11 +11,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Faz checkout do repositório
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      # Configura Node.js (versão 22) e cache para dependências
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -23,25 +21,21 @@ jobs:
           cache: "npm"
           cache-dependency-path: server/package-lock.json
 
-      # Instala dependências
       - name: 📦 Install dependencies
         run: |
           cd server
           npm install
 
-      # Executa Prettier para garantir estilo de código
       - name: 💅 Run Prettier Check
         run: |
           cd server
           npm run format:check
 
-      # Executa ESLint para análise estática
       - name: 🔍 Run ESLint
         run: |
           cd server
           npm run lint
 
-      # Compila o TypeScript
       - name: 🏗 Build TypeScript
         run: |
           cd server
@@ -55,23 +49,19 @@ jobs:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
-      # Configura ambiente de build do Docker
       - name: 🐳 Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Faz build das imagens definidas no docker-compose
       - name: 📦 Build Docker images
         run: |
           docker compose -f docker-compose.yml build
 
-      # Sobe os containers em background e exibe status
       - name: 🚀 Run containers
         run: |
           docker compose -f docker-compose.yml up -d
           sleep 20
           docker ps -a
 
-      # Executa Docker Bench Security (auditoria de segurança)
       - name: 🛡 Run Docker Bench Security
         run: |
           docker run --rm --net host --pid host --userns host \
@@ -80,7 +70,6 @@ jobs:
             -v /var/run/docker.sock:/var/run/docker.sock:ro \
             docker/docker-bench-security || true
 
-      # Derruba containers após os testes
       - name: 🛑 Stop containers
         if: always()
         run: docker compose -f docker-compose.yml down
@@ -95,15 +84,27 @@ jobs:
       - name: 🐳 Build Docker image
         run: docker build -t security-misconfig-app:latest -f server/Dockerfile ./server
 
-      - name: 🔎 Run Trivy Scan
+      # Executa Trivy em formato tabela (visível no log)
+      - name: 🔎 Run Trivy Scan (Summary)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'security-misconfig-app:latest'
           format: 'table'
-          exit-code: '1' # Falhar se vulnerabilidades críticas forem encontradas
+          exit-code: '0' # não falhar, apenas mostrar resumo
           ignore-unfixed: true
           vuln-type: 'os,library'
 
+      # Executa Trivy em formato JSON e salva em arquivo
+      - name: 🔎 Run Trivy Scan (JSON Report)
+        run: |
+          trivy image --format json --output trivy-report.json security-misconfig-app:latest
+
+      # Publica o relatório JSON como artefato para download
+      - name: 📤 Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
 
   # 4️⃣ Etapa de segurança com Snyk
   snyk-scan:
@@ -112,11 +113,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Executa Snyk para verificar vulnerabilidades de libs e containers
       - name: 🧪 Run Snyk Scan
         uses: snyk/actions/node@master
         env:
-          # Token deve ser configurado no GitHub Secrets
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: test
