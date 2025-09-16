@@ -84,22 +84,19 @@ jobs:
       - name: 🐳 Build Docker image
         run: docker build -t security-misconfig-app:latest -f server/Dockerfile ./server
 
-      # Executa Trivy em formato tabela (visível no log)
       - name: 🔎 Run Trivy Scan (Summary)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: 'security-misconfig-app:latest'
           format: 'table'
-          exit-code: '0' # não falhar, apenas mostrar resumo
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
 
-      # Executa Trivy em formato JSON e salva em arquivo
       - name: 🔎 Run Trivy Scan (JSON Report)
         run: |
           trivy image --format json --output trivy-report.json security-misconfig-app:latest
 
-      # Publica o relatório JSON como artefato para download
       - name: 📤 Upload Trivy Report
         uses: actions/upload-artifact@v4
         with:
@@ -113,9 +110,47 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 🧪 Run Snyk Scan
+      # 4.1 Scan das dependências Node.js (resumo no log)
+      - name: 🧪 Run Snyk Scan (Node.js - Summary)
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: test
+          args: --file=server/package.json --package-manager=npm --severity-threshold=high
+
+      # 4.2 Scan das dependências Node.js (JSON Report)
+      - name: 🧪 Run Snyk Scan (Node.js - JSON Report)
+        run: |
+          cd server
+          npx snyk test --json --file=package.json > ../snyk-node-report.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: 📤 Upload Snyk Node Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-node-report
+          path: snyk-node-report.json
+
+      # 4.3 Scan da imagem Docker (resumo no log)
+      - name: 🐳 Run Snyk Container Scan (Summary)
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: security-misconfig-app:latest
+          args: --severity-threshold=high
+
+      # 4.4 Scan da imagem Docker (JSON Report)
+      - name: 🐳 Run Snyk Container Scan (JSON Report)
+        run: |
+          snyk container test security-misconfig-app:latest --json > snyk-docker-report.json
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: 📤 Upload Snyk Docker Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: snyk-docker-report
+          path: snyk-docker-report.json
