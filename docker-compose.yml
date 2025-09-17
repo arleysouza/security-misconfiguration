@@ -34,6 +34,8 @@ services:
       dockerfile: Dockerfile
     container_name: server-app
     restart: always
+    env_file:
+    - ./server/.env    # apenas injeta, não copia
     networks:
       - minha-network
     depends_on:

@@ -132,6 +132,7 @@ docker run -it --name docker-bench \
 5. Reexecute a ferramenta e observe o **score melhorado**.  
 
 **Resposta**
+
 Os arquivos `server/Dockerfile.resposta` e `docker-compose.resposta.yml` possuem a resposta do Exercício.
 ```bash
 docker compose -f docker-compose.resposta.yml up --build -d

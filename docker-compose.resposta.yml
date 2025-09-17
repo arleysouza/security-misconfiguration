@@ -58,6 +58,8 @@ services:
       dockerfile: Dockerfile.resposta
     container_name: server-app
     restart: on-failure:5 # mudança para atender ao exercício
+    env_file:
+    - ./server/.env    # apenas injeta, não copia
     networks:
       - minha-network
     depends_on:
