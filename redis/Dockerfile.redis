@@ -1,0 +1,15 @@
+FROM redis:8-alpine
+
+# utilitário para trocar de usuário sem precisar ficar como root
+RUN apk add --no-cache su-exec
+
+# Garantir que diretórios existam; o /data será sobrescrito por volume,
+# mas deixamos por simetria e para casos sem volume.
+RUN mkdir -p /var/run/redis /data
+
+# Mantemos root só para poder ajustar permissões no entrypoint e depois "cair" para o usuário redis
+USER root
+
+# Healthcheck nativo na imagem customizada
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 \
+  CMD redis-cli -a "$REDIS_PASSWORD" ping || exit 1

@@ -1,0 +1,8 @@
+FROM postgres:17-alpine
+
+# Criar usuário postgres (já existe, mas reforçamos permissões)
+USER postgres
+
+# Healthcheck nativo na imagem customizada
+HEALTHCHECK --interval=30s --timeout=10s --retries=5 \
+  CMD pg_isready -U postgres || exit 1

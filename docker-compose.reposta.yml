@@ -1,0 +1,143 @@
+services:
+  postgres-app:
+    build:
+      context: ./db                     # pasta com o Dockerfile.postgres e scripts de init
+      dockerfile: Dockerfile.postgres   # imagem custom (ajustes de permissões/USER/healthcheck dentro da imagem)
+    container_name: postgres-db
+    restart: on-failure:5               # política de reinício com limite de 5 tentativas
+    env_file:
+      - ./server/.env                   # injeta variáveis sem expô-las no compose (não copia .env para a imagem)
+    ports:
+      - "127.0.0.1:5433:5432"           # bind apenas no loopback → não expõe para a rede externa
+    volumes:
+      - db_postgres_data:/var/lib/postgresql/data   # volume persistente de dados do Postgres
+      - ./db/comandos.sql:/docker-entrypoint-initdb.d/comandos.sql    # script de init executado apenas na 1ª inicialização do cluster
+    networks:
+      - minha-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]   # checagem nativa do Postgres
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:                 # limites e reservas → melhor governança de recursos e atende Docker Bench
+      resources:
+        limits:
+          cpus: "0.50"      # limita uso de CPU
+          memory: 512M      # limita memória
+          pids: 100         # limita número de processos/threads (mitiga fork-bomb)
+        reservations:
+          cpus: "0.25"      # reserva mínima (útil em orquestradores)
+          memory: 256M
+    security_opt:
+      - no-new-privileges:true    # impede processos de ganharem privilégios adicionais (setuid/setcap)
+      - apparmor:docker-default   # aplica perfil AppArmor padrão (hardeniza syscalls no host compatível)
+    read_only: true         # raiz do FS somente leitura (reduz superfície de escrita)
+    tmpfs:
+      - /tmp                  # áreas de escrita necessárias como tmpfs (em memória)
+      - /var/run/postgresql   # diretório de sockets/locks do Postgres precisa ser gravável
+    logging:
+      driver: "json-file"         # limita crescimento dos logs no host
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis-app:
+    build:
+      context: ./redis              # pasta com Dockerfile.redis
+      dockerfile: Dockerfile.redis  # imagem custom (instala su-exec, hc e prepara diretórios)
+    container_name: redis-app
+    restart: on-failure:5
+    # Ajusta dono do volume em runtime e, em seguida, baixa privilégios com su-exec para o usuário 'redis'.
+    # IMPORTANTE: usamos $$REDIS_PASSWORD (duplo $) para ESCAPAR a expansão no host.
+    # Assim a variável é resolvida DENTRO do container via env_file.
+    command: >
+      sh -c "
+        chown -R redis:redis /data /var/run/redis &&
+        exec su-exec redis redis-server --requirepass \"$$REDIS_PASSWORD\"
+      "
+    env_file:
+      - ./server/.env           # injeta REDIS_PASSWORD sem expor no compose
+    ports:
+      - "127.0.0.1:6379:6379"   # expõe só no loopback
+    volumes:
+      - redis_data:/data        # persistência do Redis (RDB/AOF)
+    networks:
+      - minha-network
+    healthcheck:
+      # idem: $$REDIS_PASSWORD para evitar interpolação pelo Compose no host
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+          pids: 100
+        reservations:
+          cpus: "0.10"
+          memory: 128M
+    security_opt:
+      - no-new-privileges:true
+      - apparmor:docker-default
+    read_only: true
+    tmpfs:
+      - /tmp              # Redis usa /tmp em operações de runtime
+      - /var/run/redis    # diretório de pid/sockets → precisa ser gravável (tmpfs)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  server-app:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.resposta     # imagem já com USER node e HEALTHCHECK no Dockerfile
+    container_name: server-app
+    restart: on-failure:5 
+    env_file:
+    - ./server/.env    # injeta envs (DB/Redis/JWT) sem copiar arquivo para a imagem
+    networks:
+      - minha-network
+    depends_on:
+      - postgres-app
+      - redis-app
+    volumes:
+      - ./server:/usr/src/app   # bind mount para desenvolvimento (hot reload, etc.)
+    command: npm run dev        # ts-node-dev ou similar (conforme seu package.json)
+    ports:
+      - "127.0.0.1:3001:3000"   # expõe API apenas no host local
+    deploy: 
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+          pids: 100
+        reservations:
+          cpus: "0.25"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    security_opt: 
+      - no-new-privileges:true
+      - apparmor:docker-default
+    read_only: true     # raiz somente leitura → garante que a app não escreva fora de locais previstos
+    tmpfs:
+      - /tmp            # Node/TS e libs podem requerer escrita temporária
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:            # volumes nomeados → persistência controlada
+  db_postgres_data:       
+  redis_data:
+
+networks:
+  minha-network:
+    driver: bridge       # rede bridge isolada para os serviços
