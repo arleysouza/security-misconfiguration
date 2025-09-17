@@ -3,10 +3,8 @@ services:
     image: postgres:17-alpine
     container_name: postgres-db
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: _12_bdaula82@&09_hg$
-      POSTGRES_DB: bdaula
+    env_file:
+      - ./server/.env          # centraliza senha no arquivo
     ports:
       - "5433:5432"
     volumes:
@@ -19,7 +17,10 @@ services:
     image: redis:8-alpine
     container_name: redis-app
     restart: always
-    command: redis-server --requirepass "s_tr_red82_Hg09"
+    # Expansão da senha só dentro do container (sem ${...} no YAML)
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$REDIS_PASSWORD\""]
+    env_file:
+      - ./server/.env          # centraliza credenciais no arquivo
     ports:
       - "6379:6379"
     volumes:
