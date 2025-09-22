@@ -100,18 +100,11 @@ O repositório contém um workflow (`.github/workflows/ci.yml`) que possui quatr
 - **Trivy** (`trivy-scan` depende do `docker`): scanner de vulnerabilidades, com relatórios em JSON exportados como artefato.
 - **Snyk** (`snyk-scan` depende do `build`): verificação de dependências e containers, também exportando relatórios para download.
 
-📌 Para rodar o Snyk no pipeline, é necessário configurar o **SNYK_TOKEN** no repositório:
-1. Crie uma conta gratuita em https://snyk.io
-2. Acesse **Account Settings > API Token** e copie o token.
-3. No GitHub acesse **Settings > Secrets and variables > Actions > New repository secret**.
-    - Nome: `SNYK_TOKEN`
-    - Valor: cole o token gerado
-
 ```mermaid
 flowchart TD
-    A[build 🏗\nNode.js build + lint + prettier] --> B[docker 🐳\nBuild containers + Docker Bench]
-    B --> C[trivy-scan 🔎\nScan imagem com Trivy]
-    A --> D[snyk-scan 🧪\nScan dependências com Snyk]
+    A[build 🏗<br />Node.js build + lint + prettier] --> B[docker 🐳<br/>Build containers + Docker Bench]
+    B --> C[trivy-scan 🔎<br/>Scan imagem com Trivy]
+    A --> D[snyk-scan 🧪<br/>Scan dependências com Snyk]
 
     style A fill:#DFF5E1,stroke:#333,stroke-width:1px
     style B fill:#E1ECF5,stroke:#333,stroke-width:1px
@@ -119,6 +112,12 @@ flowchart TD
     style D fill:#FFF4CE,stroke:#333,stroke-width:1px
 ```
 
+📌 Para rodar o Snyk no pipeline, é necessário configurar o **SNYK_TOKEN** no repositório:
+1. Crie uma conta gratuita em https://snyk.io
+2. Acesse **Account Settings > API Token** e copie o token.
+3. No GitHub acesse **Settings > Secrets and variables > Actions > New repository secret**.
+    - Nome: `SNYK_TOKEN`
+    - Valor: cole o token gerado
 
 ---
 
