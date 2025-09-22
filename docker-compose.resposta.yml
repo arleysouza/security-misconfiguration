@@ -8,7 +8,7 @@ services:
     env_file:
       - ./server/.env                   # injeta variáveis sem expô-las no compose (não copia .env para a imagem)
     ports:
-      - "127.0.0.1:5433:5432"           # bind apenas no loopback → não expõe para a rede externa
+      - "127.0.0.1:5434:5432"           # bind apenas no loopback (host local) → não expõe para a rede externa
     volumes:
       - db_postgres_data:/var/lib/postgresql/data   # volume persistente de dados do Postgres
       - ./db/comandos.sql:/docker-entrypoint-initdb.d/comandos.sql    # script de init executado apenas na 1ª inicialização do cluster
@@ -31,7 +31,7 @@ services:
     security_opt:
       - no-new-privileges:true    # impede processos de ganharem privilégios adicionais (setuid/setcap)
       - apparmor:docker-default   # aplica perfil AppArmor padrão (hardeniza syscalls no host compatível)
-    read_only: true         # raiz do FS somente leitura (reduz superfície de escrita)
+    read_only: true         # raiz do filesystem somente leitura (reduz superfície de escrita)
     tmpfs:
       - /tmp                  # áreas de escrita necessárias como tmpfs (em memória)
       - /var/run/postgresql   # diretório de sockets/locks do Postgres precisa ser gravável

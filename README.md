@@ -114,7 +114,7 @@ flowchart TD
 
 📌 Para rodar o Snyk no pipeline, é necessário configurar o **SNYK_TOKEN** no repositório:
 1. Crie uma conta gratuita em https://snyk.io
-2. Acesse **Account Settings > API Token** e copie o token.
+2. Acesse https://app.snyk.io/account e copie o token gerado - será algo como `xxxxxxxx-xxxx-xxxx-xxxxxxxxxxxxxxxx`.
 3. No GitHub acesse **Settings > Secrets and variables > Actions > New repository secret**.
     - Nome: `SNYK_TOKEN`
     - Valor: cole o token gerado
