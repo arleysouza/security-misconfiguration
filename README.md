@@ -83,10 +83,10 @@ docker compose down -v
 - **Docker Bench Security**  
   Ferramenta oficial da Docker Inc. que executa auditorias de segurança nos containers, avaliando configurações e boas práticas. 
 
-- **Trivy**
-  Scanner de vulnerabilidades para imagens Docker e dependências da aplicação.
+- **Trivy**  
+  Scanner de vulnerabilidades para imagens Docker e dependências da aplicação, integrada ao pipeline via GitHub Actions.
 
-- **Snyk**
+- **Snyk**  
   Ferramenta de análise de vulnerabilidades em bibliotecas Node.js e containers, integrada ao pipeline via GitHub Actions.
 
 
@@ -94,18 +94,30 @@ docker compose down -v
 
 ### 🧪 Integração no Pipeline (GitHub Actions)
 
-O repositório contém um workflow (`.github/workflows/ci.yml`) que integra:
-- **Prettier + ESLint**: qualidade e estilo do código.
-- **Docker Bench Security**: auditoria automática da configuração de containers.
-- **Trivy**: scanner de vulnerabilidades, com relatórios em JSON exportados como artefato.
-- **Snyk**: verificação de dependências e containers, também exportando relatórios para download.
+O repositório contém um workflow (`.github/workflows/ci.yml`) que possui quatro jobs:
+- **Prettier + ESLint** (`build`): qualidade e estilo do código.
+- **Docker Bench Security** (`docker` depende do `build`): auditoria automática da configuração de containers.
+- **Trivy** (`trivy-scan` depende do `docker`): scanner de vulnerabilidades, com relatórios em JSON exportados como artefato.
+- **Snyk** (`snyk-scan` depende do `build`): verificação de dependências e containers, também exportando relatórios para download.
 
 📌 Para rodar o Snyk no pipeline, é necessário configurar o **SNYK_TOKEN** no repositório:
 1. Crie uma conta gratuita em https://snyk.io
-2. Acesse **Account Settings > API Token**.
-3. Copie o token e configure em **Settings > Secrets and variables > Actions > New repository secret**.
+2. Acesse **Account Settings > API Token** e copie o token.
+3. No GitHub acesse **Settings > Secrets and variables > Actions > New repository secret**.
     - Nome: `SNYK_TOKEN`
     - Valor: cole o token gerado
+
+```mermaid
+flowchart TD
+    A[build 🏗\nNode.js build + lint + prettier] --> B[docker 🐳\nBuild containers + Docker Bench]
+    B --> C[trivy-scan 🔎\nScan imagem com Trivy]
+    A --> D[snyk-scan 🧪\nScan dependências com Snyk]
+
+    style A fill:#DFF5E1,stroke:#333,stroke-width:1px
+    style B fill:#E1ECF5,stroke:#333,stroke-width:1px
+    style C fill:#FDE2E2,stroke:#333,stroke-width:1px
+    style D fill:#FFF4CE,stroke:#333,stroke-width:1px
+```
 
 
 ---
@@ -127,15 +139,9 @@ docker run -it --name docker-bench \
 
 ```
 
-3. Analise o relatório gerado.  
-4. Corrija ao menos **duas falhas** (ex.: usuário root, falta de healthcheck, portas expostas).  
-5. Reexecute a ferramenta e observe o **score melhorado**.  
-
-**Resposta**
-
-Os arquivos `server/Dockerfile.resposta` e `docker-compose.resposta.yml` possuem a resposta do Exercício.
-```bash
-docker compose -f docker-compose.resposta.yml up --build -d
-```
+3. Analise o relatório e identifique as vulnerabilidades.
+4. Suba a aplicação usando `docker-compose.resposta.yml` para resolver parte dos problemas
+encontrados.
+5. Reexecute a ferramenta `docker-bench` e compare a melhoria no score.
 
 
